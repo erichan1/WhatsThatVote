@@ -14,6 +14,9 @@ from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import roc_curve 
+from sklearn.metrics import roc_auc_score
 
 #Define functions
 def load_data(filename, skiprows = 1):
@@ -33,6 +36,24 @@ def Data_reduction(x_train, percentage_threshold):
     Output:
         x_train_filtered: the resulting training data after reducing parameters
     '''
+    # fairly slow implementations with for loops. May try to use np to speed up.
+    shape = x_train.shape
+
+    for i in range(shape[1]):
+        col = x_train[:,i]
+        unique, counts = np.unique(x, return_counts=True)
+        # combine classes and counts. Maybe use for display purposes later?
+        # I'm using ## as comment for code
+        ## frequencies = np.asarray((unique, counts)) 
+
+        maxPercent = np.max(counts) / shape[1]
+
+        # if the percentage of a certain class is high enough, then 
+        # slice. Haven't written slice yet. 
+        # FIX: write slice part. 
+        if(maxPercent > percentage_threshold):
+            pass
+
     return x_train_filtered
     
 
@@ -51,12 +72,47 @@ def Dimensionality_reduction_PCA(x_train, dimensions):
     x_train_reduced = pca.fit_transform(x_train) #fit and transform the training input data
     return x_train_reduced
 
+# decently useful makeplot function. Not very customizable. 
+def makePlot(x, y, x_label, y_label, gentitle):
+    plt.figure()
+    plt.plot(x, y, color = 'c', linewidth = 1, label = y_label)
+    plt.legend(loc = 'best')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(gentitle)
+
+    plt.show()
+
 def cross_validating_randomforest(model, x_train, y_train):
     '''Eric, write your code for random forest fitting with k-fold cross-validation here
     I'm thinking this function needs to output some sort of classification error metric
-    that we can then use to evaluate the parameters in the function below
+    that we can then use to evaluate the parameters in the function below. 
     '''
-    return test_score
+    '''
+    Wow this is a lot thanks Eva. 
+    This function does cross validation for an sklearn model. Not usable for Keras though. 
+    Output: tuple w/ [Classification Error, AUC loss]
+    '''
+
+    # basic cross val scores using cross validation
+    # should return array of classification accuracy
+    cv_accuracy = cross_val_score(model, x_train, y_train, cv=5)
+
+    # Get probability scores
+    pred_prob = model.predict_proba(x_train)
+    
+    # plot ROC curve
+    roc_curve = roc_curve(pred_prob, y_train)
+
+    # Get the area under the ROC curve for general score. 
+    roc_auc_score = roc_auc_score(pred_prob, y_train)
+
+    # plot the roc curve
+    makePlot(roc_curve[0], roc_curve[1], 'FPR', 'TPR', 'ROC Curve')
+
+    # then get area under the ROC curve for measure of how good separation
+
+    return (cv_accuracy, roc_auc_score)
 
 def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid):
     '''
