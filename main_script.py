@@ -122,8 +122,8 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
             kwargs[parameter]=value #Create a dictionary of the parameter to specific value
             model = RandomForestClassifier(criterion = 'gini')
             model.set_params(**kwargs) #pass dictionary to set parameter of model
-            test_score = cross_validating_randomforest(model, x_train, y_train) #Perform the model fit and return the test_scorre
-            classification_error_sublist.append(test_score) #Now add test_score to the output list of errors
+            cv_accuracy, auc_accuracy = cross_validating_randomforest(model, x_train, y_train) #Perform the model fit and return the test_scorre
+            classification_error_sublist.append(np.mean(auc_accuracy)) #Now add test_score to the output list of errors
         classification_error.append(classification_error_sublist)
     
     return classification_error
@@ -142,7 +142,7 @@ print(x_train_reduced.shape)
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
 #Plot the parameter value versus classification error to find parameter sweet-spot
 paramgrid = { 
-            "n_estimators" : list(np.arange(1000,5000,1000)),
+            "n_estimators" : list(np.arange(10,200,50)),
             }
 
 #            "max_features" : ["auto", "sqrt", "log2"],
