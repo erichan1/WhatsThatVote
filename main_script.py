@@ -140,8 +140,6 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
         classification_error.append(classification_error_sublist)
     return classification_error
 
-
-
 #Load data
 train_data = load_data('train_2008.csv')
 test_data = load_data('test_2008.csv')
