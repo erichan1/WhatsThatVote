@@ -39,6 +39,9 @@ def Data_reduction(x_train, percentage_threshold):
     # fairly slow implementations with for loops. May try to use np to speed up.
     shape = x_train.shape
 
+    # list to hold columns to delete
+    delete_cols = []
+
     for i in range(shape[1]):
         col = x_train[:,i]
         unique, counts = np.unique(x, return_counts=True)
@@ -49,11 +52,11 @@ def Data_reduction(x_train, percentage_threshold):
         maxPercent = np.max(counts) / shape[1]
 
         # if the percentage of a certain class is high enough, then 
-        # slice. Haven't written slice yet. 
-        # FIX: write slice part. 
+        # slice. 
         if(maxPercent > percentage_threshold):
-            pass
-
+            delete_cols.append(i)
+    x_train_filtered = x_train.copy()
+    np.delete(x_train_filtered, delete_cols, 1)
     return x_train_filtered
     
 
@@ -97,22 +100,21 @@ def cross_validating_randomforest(model, x_train, y_train):
     # basic cross val scores using cross validation
     # should return array of classification accuracy
     cv_accuracy = cross_val_score(model, x_train, y_train, cv=5)
-
+    print(cv_accuracy)
+    roc_auc_scores = cross_val_score(model, x_train, y_train, cv=5, scoring = 'roc_auc')
+    print(roc_auc_scores)
     # Get probability scores
-    pred_prob = model.predict_proba(x_train)[:,1]
- 
-    # plot ROC curve
-    roc_curve_ = roc_curve(y_train, pred_prob)
+    ## pred_prob = model.predict_proba(x_train)[:,1]
 
-    # Get the area under the ROC curve for general score. 
-    roc_auc_score_ = roc_auc_score(y_train, pred_prob)
+    # plot ROC curve
+    ## roc_curve_ = roc_curve(y_train, pred_prob)
 
     # plot the roc curve
-    makePlot(roc_curve_[0], roc_curve_[1], 'FPR', 'TPR', 'ROC Curve')
+    ## makePlot(roc_curve_[0], roc_curve_[1], 'FPR', 'TPR', 'ROC Curve')
 
     # then get area under the ROC curve for measure of how good separation
 
-    return (cv_accuracy, roc_auc_score_)
+    return (cv_accuracy, roc_auc_scores)
 
 def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid):
     '''
@@ -138,6 +140,8 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
         classification_error.append(classification_error_sublist)
     return classification_error
 
+
+
 #Load data
 train_data = load_data('train_2008.csv')
 test_data = load_data('test_2008.csv')
@@ -150,8 +154,11 @@ x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, mon
 model = RandomForestClassifier(criterion = 'gini')
 model.fit(x_train, y_train)
 (cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train, y_train)
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 841df55e3b7f465d7690132f394d17da11ebc85c
 
 #dimensions_lst = [10,100,379]
 #for dimensions in dimensions_lst:
