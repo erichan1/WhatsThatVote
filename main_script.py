@@ -134,24 +134,34 @@ test_data = load_data('test_2008.csv')
 y_train = train_data[:,382]
 x_train = train_data[:,3:382] #Here I remove the first 3 columns representing ID, month, and year
 x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, month, and year
+test_data_2012 = load_data('test_2012.csv')
+x_test_2012 = train_data[:,3:]
 
 x_train_reduced = data_reduction(x_train, 0.98)
 print(x_train.shape)
 print(x_train_reduced.shape)
 
+x_test_reduced = data_reduction(x_test, 0.98)
+print(x_test.shape)
+print(x_test_reduced.shape)
+
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
 #Plot the parameter value versus classification error to find parameter sweet-spot
-paramgrid = { 
-            "n_estimators" : list(np.arange(10,200,50)),
-            }
-
+#paramgrid = { 
+         #   "max_features" : ["auto", "sqrt", "log2"],
+          #  "min_samples_leaf" : list(np.arange(1,100,5)) #This is what we used in the problem set
+         #   }
+          #  "n_estimators" : list(np.arange(10,200,50)),
 #            "max_features" : ["auto", "sqrt", "log2"],
 #            "bootstrap": [True, False],
 #            "max_depth" : list(np.arange(2,20)), #This is what we used in the problem set
 #            "min_leaf_node" : list(np.arange(1,26)) #This is what we used in the problem set
 #            }
 
-classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
-
+#classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
 
 #Now perform actual model fit with optimized parameters and dimensions
+model = RandomForestClassifier(criterion = 'gini')
+model.set_params(n_estimators=500,max_features='auto',min_samples_leaf=25)
+#model.fit(x_train_reduced,y_train)
+(cv_accuracy,roc)=cross_validating_randomforest(model, x_train_reduced, y_train)
