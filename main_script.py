@@ -39,6 +39,9 @@ def Data_reduction(x_train, percentage_threshold):
     # fairly slow implementations with for loops. May try to use np to speed up.
     shape = x_train.shape
 
+    # list to hold columns to delete
+    delete_cols = []
+
     for i in range(shape[1]):
         col = x_train[:,i]
         unique, counts = np.unique(x, return_counts=True)
@@ -49,11 +52,11 @@ def Data_reduction(x_train, percentage_threshold):
         maxPercent = np.max(counts) / shape[1]
 
         # if the percentage of a certain class is high enough, then 
-        # slice. Haven't written slice yet. 
-        # FIX: write slice part. 
+        # slice. 
         if(maxPercent > percentage_threshold):
-            pass
-
+            delete_cols.append(i)
+    x_train_filtered = x_train.copy()
+    np.delete(x_train_filtered, delete_cols, 1)
     return x_train_filtered
     
 
@@ -100,7 +103,7 @@ def cross_validating_randomforest(model, x_train, y_train):
 
     # Get probability scores
     pred_prob = model.predict_proba(x_train)
-    
+
     # plot ROC curve
     roc_curve = roc_curve(pred_prob, y_train)
 
@@ -137,6 +140,8 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
             classification_error_sublist.append(test_score) #Now add test_score to the output list of errors
         classification_error.append(classification_error_sublist)
     return classification_error
+
+
 
 #Load data
 train_data = load_data('train_2008.csv')
