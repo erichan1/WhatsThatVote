@@ -31,7 +31,7 @@ def load_data(filename, skiprows = 1):
     """
     return np.loadtxt(filename, skiprows=skiprows, delimiter=',')
 
-def Data_reduction(x_train, percentage_threshold):
+def data_reduction(x_train, percentage_threshold):
     '''
     Output:
         x_train_filtered: the resulting training data after reducing parameters
@@ -44,19 +44,18 @@ def Data_reduction(x_train, percentage_threshold):
 
     for i in range(shape[1]):
         col = x_train[:,i]
-        unique, counts = np.unique(x, return_counts=True)
+        unique, counts = np.unique(col, return_counts=True)
         # combine classes and counts. Maybe use for display purposes later?
         # I'm using ## as comment for code
         ## frequencies = np.asarray((unique, counts)) 
 
-        maxPercent = np.max(counts) / shape[1]
+        maxPercent = np.max(counts) / shape[0]
 
         # if the percentage of a certain class is high enough, then 
         # slice. 
         if(maxPercent > percentage_threshold):
             delete_cols.append(i)
-    x_train_filtered = x_train.copy()
-    np.delete(x_train_filtered, delete_cols, 1)
+    x_train_filtered = np.delete(x_train, delete_cols, 1)
     return x_train_filtered
     
 
@@ -100,9 +99,10 @@ def cross_validating_randomforest(model, x_train, y_train):
     # basic cross val scores using cross validation
     # should return array of classification accuracy
     cv_accuracy = cross_val_score(model, x_train, y_train, cv=5)
-    print(cv_accuracy)
+
+    # roc auc score using 5fold cross val
     roc_auc_scores = cross_val_score(model, x_train, y_train, cv=5, scoring = 'roc_auc')
-    print(roc_auc_scores)
+
     # Get probability scores
     ## pred_prob = model.predict_proba(x_train)[:,1]
 
@@ -148,6 +148,12 @@ test_data = load_data('test_2008.csv')
 y_train = train_data[:,382]
 x_train = train_data[:,3:382] #Here I remove the first 3 columns representing ID, month, and year
 x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, month, and year
+
+
+x_train_reduced = data_reduction(x_train, 0.98)
+print(x_train.shape)
+print(x_train_reduced.shape)
+
 
 #Here create a loop that fits randomforest to multiple different PCA dimensions
 #Plot the dimension number versus test score to find sweet-spot number of dimensions
