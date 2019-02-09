@@ -148,8 +148,10 @@ x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, mon
 #Here create a loop that fits randomforest to multiple different PCA dimensions
 #Plot the dimension number versus test score to find sweet-spot number of dimensions
 model = RandomForestClassifier(criterion = 'gini')
-model.fit(x_train_reduced, y_train)
-(cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train_reduced, y_train)
+model.fit(x_train, y_train)
+(cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train, y_train)
+
+
 
 #dimensions_lst = [10,100,379]
 #for dimensions in dimensions_lst:
@@ -157,9 +159,6 @@ model.fit(x_train_reduced, y_train)
 #    model = RandomForestClassifier(criterion = 'gini')
 #    model.fit(x_train_reduced, y_train)
 #    (cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train_reduced, y_train)
-    
-
-    
 
 
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
