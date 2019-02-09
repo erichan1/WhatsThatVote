@@ -102,20 +102,20 @@ def cross_validating_randomforest(model, x_train, y_train):
     cv_accuracy = cross_val_score(model, x_train, y_train, cv=5)
 
     # Get probability scores
-    pred_prob = model.predict_proba(x_train)
-
+    pred_prob = model.predict_proba(x_train)[:,1]
+    
     # plot ROC curve
-    roc_curve = roc_curve(pred_prob, y_train)
+    roc_curve_ = roc_curve(y_train, pred_prob)
 
     # Get the area under the ROC curve for general score. 
-    roc_auc_score = roc_auc_score(pred_prob, y_train)
+    roc_auc_score_ = roc_auc_score(y_train, pred_prob)
 
     # plot the roc curve
-    makePlot(roc_curve[0], roc_curve[1], 'FPR', 'TPR', 'ROC Curve')
+    makePlot(roc_curve_[0], roc_curve_[1], 'FPR', 'TPR', 'ROC Curve')
 
     # then get area under the ROC curve for measure of how good separation
 
-    return (cv_accuracy, roc_auc_score)
+    return (cv_accuracy, roc_auc_score_)
 
 def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid):
     '''
@@ -152,6 +152,19 @@ x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, mon
 
 #Here create a loop that fits randomforest to multiple different PCA dimensions
 #Plot the dimension number versus test score to find sweet-spot number of dimensions
+model = RandomForestClassifier(criterion = 'gini')
+model.fit(x_train_reduced, y_train)
+(cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train_reduced, y_train)
+
+#dimensions_lst = [10,100,379]
+#for dimensions in dimensions_lst:
+#    x_train_reduced = Dimensionality_reduction_PCA(x_train, dimensions)
+#    model = RandomForestClassifier(criterion = 'gini')
+#    model.fit(x_train_reduced, y_train)
+#    (cv_accuracy, roc_auc_score_) = cross_validating_randomforest(model, x_train_reduced, y_train)
+    
+
+    
 
 
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
