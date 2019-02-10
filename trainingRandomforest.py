@@ -174,10 +174,12 @@ x_train_normalized = normalize_data(x_train_reduced)
 x_test_reduced = delete_cols(x_test, cols_delete)
 print(x_test.shape)
 print(x_test_reduced.shape)
+x_test_normalized = normalize_data(x_test_reduced)
 
 x_test_2012_reduced = delete_cols(x_test_2012, cols_delete)
 print(x_test_2012.shape)
 print(x_test_2012_reduced.shape)
+x_test_2012_normalized = normalize_data(x_test_2012_reduced)
 
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
 #Plot the parameter value versus classification error to find parameter sweet-spot
