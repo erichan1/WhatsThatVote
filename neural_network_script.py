@@ -14,6 +14,7 @@ from keras.layers import Dense, Activation, Dropout
 from keras.layers import Conv2D, MaxPooling2D, Flatten, BatchNormalization
 from keras import regularizers
 from sklearn.model_selection import KFold
+from keras.utils import to_categorical
 
 #Define functions
 def load_data(filename, skiprows = 1):
@@ -55,7 +56,33 @@ def data_reduction(x_train, percentage_threshold):
     x_train_filtered = np.delete(x_train, delete_cols, 1)
     return x_train_filtered
 
+# for each column, divide all of it by its max value
+def normalize_data(x_data):
+    new_x = x_data.copy()
+    shape = new_x.shape
+    for i in range(shape[1]):
+        col = new_x[:,i]
+        maxVal = np.max(col)
+        new_x[:,i] /= maxVal
+    return new_x
 
+
+def cross_val_NN(model, x_data, y_data):
+    kf = KFold(n_splits=5)
+    training_accuracy = []
+    test_accuracy = []
+    weights = model.get_weights()
+    for train_index, test_index in kf.split(x_data):
+        model.set_weights(weights)
+        x_train_fold, x_test_fold = x_data[train_index], x_data[test_index]
+        y_train_fold, y_test_fold = y_data[train_index], y_data[test_index]
+        training_model = model.fit(x_train_fold, y_train_fold, epochs=10, batch_size=1000)
+        training_accuracy.append(model.evaluate(x=x_train_fold, y=y_train_fold)[1])
+        test_accuracy.append(model.evaluate(x=x_test_fold,y=y_test_fold)[1])
+    training_accuracy = np.array(training_accuracy)
+    test_accuracy = np.array(test_accuracy)
+
+    return (training_accuracy, test_accuracy)
 
 train_data = load_data('train_2008.csv')
 test_data = load_data('test_2008.csv')
@@ -67,35 +94,33 @@ x_train_reduced = data_reduction(x_train, 0.98)
 print(x_train.shape)
 print(x_train_reduced.shape)
 
-#Set up model
+print(x_train_reduced)
+x_train_reduced = normalize_data(x_train_reduced)
+
+input_size = x_train_reduced.shape[1]
+y_train_binary = to_categorical(y_train)
+
+# create model
 model = Sequential()
-model.add(Dense(10))
-model.add(Dropout(0.5))
-model.add(Activation('relu'))
+model.add(Dense(input_size, input_shape=(input_size,)))
 model.add(BatchNormalization())
-model.add(Dense(len(x_train_reduced)))
+model.add(Activation('relu')) 
+model.add(Dropout(0.3))
+
+model.add(Dense(200))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(Dropout(0.3))
+
+model.add(Dense(2))
 model.add(Activation('softmax'))
-model.compile(optimizer='rmsprop',
+
+model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-# Final model for maximum test accuracy
-kf = KFold(n_splits=5)
-training_accuracy = []
-for train_index, test_index in kf.split(x_train_reduced):
-    x_train_fold, x_test_fold = x_train_reduced[train_index], x_train_reduced[test_index]
-    y_train_fold, y_test_fold = y_train[train_index], y_train[test_index]
-    training_model = model.fit(x_train, y_train, epochs=1, batch_size=1000,
-                    validation_data=(x_test_fold, y_test_fold))
-    training_accuracy.append(model.evaluate(x=x_train_fold, y=y_train_fold)[1])
-    test_accuracy.append(model.evaluate(x=x_test_fold,y=y_test_fold)[1])
+# Cross val to get an idea of accuracies.
+train_acc, test_acc = cross_val_NN(model, x_train_reduced, y_train_binary)
 
-print('training_accuracy {}'.format(np.mean(training_accuracy)))
-print('test_accuracy {}'.format(np.mean(test_accuracy))
-    
-    
-
-
-
-
-
+print('training_accuracy {}'.format(np.mean(train_acc)))
+print('test_accuracy {}'.format(np.mean(test_acc)))

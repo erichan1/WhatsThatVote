@@ -73,12 +73,7 @@ def makePlot(x, y, x_label, y_label, gentitle):
     plt.show()
 
 def cross_validating_randomforest(model, x_train, y_train):
-    '''Eric, write your code for random forest fitting with k-fold cross-validation here
-    I'm thinking this function needs to output some sort of classification error metric
-    that we can then use to evaluate the parameters in the function below. 
     '''
-    '''
-    Wow this is a lot thanks Eva. 
     This function does cross validation for an sklearn model. Not usable for Keras though. 
     Output: tuple w/ [Classification Error, AUC loss]
     '''
