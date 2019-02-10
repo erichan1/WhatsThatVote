@@ -60,6 +60,15 @@ def data_reduction(x_train, percentage_threshold):
 def delete_cols(dataset, delete_cols):
     return np.delete(dataset, delete_cols, 1)
 
+def normalize_data(x_data):
+    new_x = x_data.copy()
+    shape = new_x.shape
+    for i in range(shape[1]):
+        col = new_x[:,i]
+        maxVal = np.max(col)
+        new_x[:,i] /= maxVal
+    return new_x
+
 # decently useful makeplot function. Not very customizable. 
 def makePlot(x, y, x_label, y_label, gentitle):
     plt.figure()
@@ -160,6 +169,7 @@ cols_delete = data_reduction(x_train, 0.98)
 x_train_reduced = delete_cols(x_train, cols_delete)
 print(x_train.shape)
 print(x_train_reduced.shape)
+x_train_normalized = normalize_data(x_train_reduced)
 
 x_test_reduced = delete_cols(x_test, cols_delete)
 print(x_test.shape)
@@ -171,24 +181,24 @@ print(x_test_2012_reduced.shape)
 
 #Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
 #Plot the parameter value versus classification error to find parameter sweet-spot
-paramgrid = { 
+#paramgrid = { 
          #   "max_features" : ["auto", "sqrt", "log2"],
           #  "min_samples_leaf" : list(np.arange(1,100,5)) #This is what we used in the problem set
          #   }
           #  "n_estimators" : list(np.arange(10,200,50)),
 #            "max_features" : ["auto", "sqrt", "log2"],
 #            "bootstrap": [True, False],
-            "max_depth" : list(np.arange(2,20)), #This is what we used in the problem set
+            #"max_depth" : list(np.arange(2,20)), #This is what we used in the problem set
 #            "min_leaf_node" : list(np.arange(1,26)) #This is what we used in the problem set
-            }
+#            }
 
-classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
+#classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
 
 #Now perform actual model fit with optimized parameters and dimensions
-#model = RandomForestClassifier(criterion = 'gini')
-#model.set_params(n_estimators=110, max_features='auto', min_samples_leaf=25)
+model = RandomForestClassifier(criterion = 'gini')
+model.set_params(n_estimators=110, max_features='auto', min_samples_leaf=25, bootstrap=False)
 #model.fit(x_train_reduced, y_train)
-#(cv_accuracy,roc)=cross_validating_randomforest(model, x_train, y_train)
+(cv_accuracy,roc)=cross_validating_randomforest(model, x_train, y_train)
 #target_2008 = model.predict_proba(x_test_reduced)[:,1]
 #target_2012 = model.predict_proba(x_test_2012_reduced)[:,1]
 #Write files

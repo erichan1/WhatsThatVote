@@ -182,7 +182,7 @@ print(x_test_2012_reduced.shape)
 
 #Now perform actual model fit with optimized parameters and dimensions
 model = RandomForestClassifier(criterion = 'gini')
-model.set_params(n_estimators=110, max_features='auto', min_samples_leaf=25)
+model.set_params(n_estimators=110, max_features='auto', max_depth=11, min_samples_leaf=25)
 model.fit(x_train_reduced, y_train)
 #(cv_accuracy,roc)=cross_validating_randomforest(model, x_train, y_train)
 target_2008 = model.predict_proba(x_test_reduced)[:,1]
