@@ -1,9 +1,8 @@
-
 """
 Created on Thu Feb  7 17:24:51 2019
 
 CS155 Project 1: Predict voter turnout
-This script is used to perform sensitivity analyses of Random Forest
+This script is used to do the final model fit for Random Forest
 
 @author: Eva Scheller and Eric Han
 """
@@ -139,52 +138,34 @@ def cross_validating_randomforest(model, x_train, y_train):
 
     return (cv_accuracy, roc_auc_scores)
 
-def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid):
+def get_accuracy_differences(x_train_normalized, y_train, x_test_normalized):
     '''
-    This function will perform RandomForestClassification with a variation
-    of different parameter values. It will output the test scores for each parameter value. 
-    Inputs: 
-        x_train : training data input
-        y_train : training data output
-        paramgrid : dictionary of the parameter values that will be evaluated
-    Outputs: 
-        classification_error : a list of all the calculated classification errors
+    This function goes through all columns in the input data and calculates the 
+    difference in AUC score between performin Random Forest on the full data set 
+    and performing Random Forest on data set without one column.
+    Input:
+        x_train_normalized: normalized and reduced input data
+        y_train: class labels
+        x_test_normalized: normalized and reduced test data
+    Output: 
+        score_difference: absolute difference in AUC score
     '''
-    classification_error = [] #define list of classification errors
-    for parameter in paramgrid: #go through each parameter key
-        classification_error_sublist = []
-        n=1
-        for value in paramgrid[parameter]:
-            print('update {}'.format(n))
-            n+=1
-            kwargs = {}
-            kwargs[parameter]=value #Create a dictionary of the parameter to specific value
-            model = RandomForestClassifier(criterion = 'gini')
-            model.set_params(**kwargs) #pass dictionary to set parameter of model
-            cv_accuracy, auc_accuracy = cross_validating_randomforest(model, x_train, y_train) #Perform the model fit and return the test_scorre
-            classification_error_sublist.append(np.mean(auc_accuracy)) #Now add test_score to the output list of errors
-        classification_error.append(classification_error_sublist)
+    model = RandomForestClassifier(criterion = 'gini')
+    (cv_accuracy,roc)=cross_validating_randomforest(model, x_train_normalized, y_train)
+    baseline_roc = np.mean(roc)
+    model.fit(x_train_normalized, y_train)
+    baseline_predict = model.predict_proba(x_test_normalized)[:,1]
     
-    return classification_error
-
-def write_file(filename, ID, target):
-    '''
-    This function writes a csv file for submission purposes
-    Input: 
-        filename: name of file
-        ID: an array of id numbers
-        target: the predicted probability of the positive class
-    '''
-    new_ID, new_target = zip(*sorted(zip(ID,target))) #sort the id and target according to id numbers
-    new_ID_array = []
-    for value in list(new_ID):
-        new_ID_array.append(int(value)) #transform ID numbers to integers instead of float
-        
-    with open(filename,'w') as f: #write the csv file
-        f.write('id,target\n')
-        writer=csv.writer(f,delimiter=',')
-        writer.writerows(zip(new_ID_array,list((new_target)))) #write id and target in separate columns
-    f.close()
+    score_difference = []
+    for i in range(len(x_train_normalized[0])):
+        x_train_MissingColumn = delete_cols(x_train_normalized, i)
+        x_test_MissingColumn = delete_cols(x_test_normalized, i)
+        model = RandomForestClassifier(criterion = 'gini')
+        (cv_accuracy,roc)=cross_validating_randomforest(model, x_train_MissingColumn, y_train)
+        roc_score = np.mean(roc)
+        roc_diff = baseline_roc - roc_score
+        score_difference.append(roc_diff)
+    return score_difference
 
 #Load data
 train_data = load_data('train_2008.csv')
@@ -194,26 +175,26 @@ x_train = train_data[:,3:382] #Here I remove the first 3 columns representing ID
 x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, month, and year
 test_data_2012 = load_data('test_2012.csv')
 x_test_2012 = test_data_2012[:,3:]
-#Load ID columns for 2008 and 2012 test data
-ID_2008 = test_data[:,0]
-ID_2012 = test_data_2012[:,0]
 
-#Perform data reduction
-cols_delete = data_reduction(x_train, 0.98) #Columns to be deleted
-x_train_reduced = delete_cols(x_train, cols_delete) #delete columns for training data
+cols_delete = data_reduction(x_train, 0.98)
+x_train_reduced = delete_cols(x_train, cols_delete)
 print(x_train.shape)
 print(x_train_reduced.shape)
-x_train_normalized = normalize_data(x_train_reduced) #normalize training data
+x_train_normalized = normalize_data(x_train_reduced)
+x_test_reduced = delete_cols(x_test, cols_delete)
+print(x_test.shape)
+print(x_test_reduced.shape)
+x_test_normalized = normalize_data(x_test_reduced)
 
-#Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
-#Plot the parameter value versus classification error to find parameter sweet-spot
-paramgrid = { 
-            "max_features" : ["auto", "sqrt", "log2"],
-            "min_samples_leaf" : list(np.arange(1,100,5)),
-            "n_estimators" : list(np.arange(10,200,50)),
-            "bootstrap": [True, False],
-            "max_depth" : list(np.arange(2,20)),
-            }
 
-classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
+#Calculate the score_difference and probability_difference using get_accuracy_differences function
+score_difference = get_accuracy_differences(x_train_normalized, y_train, x_test_normalized)
+#get sorted indices for the score_differences
+indices = np.arange(0,len(score_difference))
+score_difference_sorted, indices_sorted = zip(*sorted(zip(score_difference,indices)))
+
+
+
+
+    
 

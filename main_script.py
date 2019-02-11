@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Feb  7 17:24:51 2019
 
 CS155 Project 1: Predict voter turnout
+This script is used to do the final model fit for Random Forest
 
 @author: Eva Scheller and Eric Han
 """
@@ -34,8 +33,14 @@ def load_data(filename, skiprows = 1):
 
 def data_reduction(x_train, percentage_threshold):
     '''
+    This function takes the input data and returns the columns that need to be deleted
+    if one value takes up more than percentage_threshol % of the columns inputs. 
+    Essentially, if all values in the column are the same. 
+    Input:
+        x_train: input data
+        percentage_threshold: threshold for discarding data if one value dominates the input of a column
     Output:
-        x_train_filtered: the resulting training data after reducing parameters
+        delete_cols: columns that need to be deleted based on threshold
     '''
     # fairly slow implementations with for loops. May try to use np to speed up.
     shape = x_train.shape
@@ -59,10 +64,37 @@ def data_reduction(x_train, percentage_threshold):
     return delete_cols
 
 def delete_cols(dataset, delete_cols):
+    '''
+    This function deletes all the columns identified through the data_reduction function. 
+    Input:
+        dataset: the input data
+        delete_cols: the column index for columns that need to be deleted
+    Output: 
+        the reduced input dataset
+    '''
     return np.delete(dataset, delete_cols, 1)
+
+def normalize_data(x_data):
+    '''
+    This function performs column-wise normalization on the input data. 
+    Input: 
+        x_data: the reduced input data
+    Output: 
+        new_x: the normalized input data
+    '''
+    new_x = x_data.copy()
+    shape = new_x.shape
+    for i in range(shape[1]):
+        col = new_x[:,i]
+        maxVal = np.max(col)
+        new_x[:,i] /= maxVal
+    return new_x
 
 # decently useful makeplot function. Not very customizable. 
 def makePlot(x, y, x_label, y_label, gentitle):
+    '''
+    This function makes a plot of any x-array and y-array pairing. 
+    '''
     plt.figure()
     plt.plot(x, y, color = 'c', linewidth = 1, label = y_label)
     plt.legend(loc = 'best')
@@ -74,8 +106,16 @@ def makePlot(x, y, x_label, y_label, gentitle):
 
 def cross_validating_randomforest(model, x_train, y_train):
     '''
-    This function does cross validation for an sklearn model. Not usable for Keras though. 
-    Output: tuple w/ [Classification Error, AUC loss]
+    This function performs 5-fold cross validation and returns the cvv accuracy and roc-auc scores.
+    It uses the sklearn cross_val_score function
+    Input: 
+        model: Random Forest model object
+        x_train: reduced and normalized training input
+        y_train: training data label
+    output: 
+        cv_accuracy: calculated cv accuracy
+        roc_auc_scores: roc-auc scores
+        
     '''
 
     # basic cross val scores using cross validation
@@ -128,17 +168,21 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
 
 def write_file(filename, ID, target):
     '''
-    Insert some text
+    This function writes a csv file for submission purposes
+    Input: 
+        filename: name of file
+        ID: an array of id numbers
+        target: the predicted probability of the positive class
     '''
-    new_ID, new_target = zip(*sorted(zip(ID,target)))
+    new_ID, new_target = zip(*sorted(zip(ID,target))) #sort the id and target according to id numbers
     new_ID_array = []
     for value in list(new_ID):
-        new_ID_array.append(int(value))
+        new_ID_array.append(int(value)) #transform ID numbers to integers instead of float
         
-    with open(filename,'w') as f:
+    with open(filename,'w') as f: #write the csv file
         f.write('id,target\n')
         writer=csv.writer(f,delimiter=',')
-        writer.writerows(zip(new_ID_array,list((new_target))))
+        writer.writerows(zip(new_ID_array,list((new_target)))) #write id and target in separate columns
     f.close()
         
 #Load data
@@ -149,36 +193,26 @@ x_train = train_data[:,3:382] #Here I remove the first 3 columns representing ID
 x_test = test_data[:,3:] #Here I remove the first 3 columns representing ID, month, and year
 test_data_2012 = load_data('test_2012.csv')
 x_test_2012 = test_data_2012[:,3:]
-
+#Load ID columns for 2008 and 2012 test data
 ID_2008 = test_data[:,0]
 ID_2012 = test_data_2012[:,0]
-cols_delete = data_reduction(x_train, 0.98)
-x_train_reduced = delete_cols(x_train, cols_delete)
+
+#Perform data reduction
+cols_delete = data_reduction(x_train, 0.98) #Columns to be deleted
+x_train_reduced = delete_cols(x_train, cols_delete) #delete columns for training data
 print(x_train.shape)
 print(x_train_reduced.shape)
+x_train_normalized = normalize_data(x_train_reduced) #normalize training data
 
-x_test_reduced = delete_cols(x_test, cols_delete)
+x_test_reduced = delete_cols(x_test, cols_delete) #dele columns for 2008 test data
 print(x_test.shape)
 print(x_test_reduced.shape)
+x_test_normalized = normalize_data(x_test_reduced) #normalize 2008 test data
 
-x_test_2012_reduced = delete_cols(x_test_2012, cols_delete)
+x_test_2012_reduced = delete_cols(x_test_2012, cols_delete) #dele columns for 2012 test data
 print(x_test_2012.shape)
 print(x_test_2012_reduced.shape)
-
-#Here use perform_randomforest_sensitivity_analysis to train on the data with optimal number of dimensions
-#Plot the parameter value versus classification error to find parameter sweet-spot
-#paramgrid = { 
-         #   "max_features" : ["auto", "sqrt", "log2"],
-          #  "min_samples_leaf" : list(np.arange(1,100,5)) #This is what we used in the problem set
-         #   }
-          #  "n_estimators" : list(np.arange(10,200,50)),
-#            "max_features" : ["auto", "sqrt", "log2"],
-#            "bootstrap": [True, False],
-#            "max_depth" : list(np.arange(2,20)), #This is what we used in the problem set
-#            "min_leaf_node" : list(np.arange(1,26)) #This is what we used in the problem set
-#            }
-
-#classification_error_n_estimators = perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid)
+x_test_2012_normalized = normalize_data(x_test_2012_reduced) #normalize 2012 test data
 
 #Now perform actual model fit with optimized parameters and dimensions
 model = RandomForestClassifier(criterion = 'gini')
