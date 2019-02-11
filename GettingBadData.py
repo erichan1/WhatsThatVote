@@ -138,7 +138,7 @@ def cross_validating_randomforest(model, x_train, y_train):
 
     return (cv_accuracy, roc_auc_scores)
 
-def get_accuracy_differences(x_train_normalized, y_train, x_test_normalized):
+def get_accuracy_differences(x_train_normalized, y_train):
     '''
     This function goes through all columns in the input data and calculates the 
     difference in AUC score between performin Random Forest on the full data set 
@@ -146,7 +146,6 @@ def get_accuracy_differences(x_train_normalized, y_train, x_test_normalized):
     Input:
         x_train_normalized: normalized and reduced input data
         y_train: class labels
-        x_test_normalized: normalized and reduced test data
     Output: 
         score_difference: absolute difference in AUC score
     '''
@@ -154,12 +153,13 @@ def get_accuracy_differences(x_train_normalized, y_train, x_test_normalized):
     (cv_accuracy,roc)=cross_validating_randomforest(model, x_train_normalized, y_train)
     baseline_roc = np.mean(roc)
     model.fit(x_train_normalized, y_train)
-    baseline_predict = model.predict_proba(x_test_normalized)[:,1]
     
     score_difference = []
+    n=1
     for i in range(len(x_train_normalized[0])):
+        print('update {}'.format(n))
+        n+=1
         x_train_MissingColumn = delete_cols(x_train_normalized, i)
-        x_test_MissingColumn = delete_cols(x_test_normalized, i)
         model = RandomForestClassifier(criterion = 'gini')
         (cv_accuracy,roc)=cross_validating_randomforest(model, x_train_MissingColumn, y_train)
         roc_score = np.mean(roc)
@@ -181,19 +181,12 @@ x_train_reduced = delete_cols(x_train, cols_delete)
 print(x_train.shape)
 print(x_train_reduced.shape)
 x_train_normalized = normalize_data(x_train_reduced)
-x_test_reduced = delete_cols(x_test, cols_delete)
-print(x_test.shape)
-print(x_test_reduced.shape)
-x_test_normalized = normalize_data(x_test_reduced)
-
 
 #Calculate the score_difference and probability_difference using get_accuracy_differences function
-score_difference = get_accuracy_differences(x_train_normalized, y_train, x_test_normalized)
+score_difference = get_accuracy_differences(x_train_normalized, y_train)
 #get sorted indices for the score_differences
 indices = np.arange(0,len(score_difference))
 score_difference_sorted, indices_sorted = zip(*sorted(zip(score_difference,indices)))
-
-
 
 
     

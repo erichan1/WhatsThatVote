@@ -138,34 +138,6 @@ def cross_validating_randomforest(model, x_train, y_train):
 
     return (cv_accuracy, roc_auc_scores)
 
-def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgrid):
-    '''
-    This function will perform RandomForestClassification with a variation
-    of different parameter values. It will output the test scores for each parameter value. 
-    Inputs: 
-        x_train : training data input
-        y_train : training data output
-        paramgrid : dictionary of the parameter values that will be evaluated
-    Outputs: 
-        classification_error : a list of all the calculated classification errors
-    '''
-    classification_error = [] #define list of classification errors
-    for parameter in paramgrid: #go through each parameter key
-        classification_error_sublist = []
-        n=1
-        for value in paramgrid[parameter]:
-            print('update {}'.format(n))
-            n+=1
-            kwargs = {}
-            kwargs[parameter]=value #Create a dictionary of the parameter to specific value
-            model = RandomForestClassifier(criterion = 'gini')
-            model.set_params(**kwargs) #pass dictionary to set parameter of model
-            cv_accuracy, auc_accuracy = cross_validating_randomforest(model, x_train, y_train) #Perform the model fit and return the test_scorre
-            classification_error_sublist.append(np.mean(auc_accuracy)) #Now add test_score to the output list of errors
-        classification_error.append(classification_error_sublist)
-    
-    return classification_error
-
 def write_file(filename, ID, target):
     '''
     This function writes a csv file for submission purposes
@@ -214,13 +186,219 @@ print(x_test_2012.shape)
 print(x_test_2012_reduced.shape)
 x_test_2012_normalized = normalize_data(x_test_2012_reduced) #normalize 2012 test data
 
+#Potential further reduction using GettingBadData script
+#Here remove any features that resulted in a negative influence of the AUC score from the GettingBadData script
+HighAUCColumns = [77,190,9,98,121,138,161,28,13,172,249,130,199,7,233,238,241,2,136,205,247,239,127,119,47,96,12,74,37,31]
+LowAUCColumns = [64,
+ 125,
+ 120,
+ 128,
+ 245,
+ 10,
+ 213,
+ 183,
+ 169,
+ 260,
+ 207,
+ 206,
+ 110,
+ 100,
+ 86,
+ 112,
+ 83,
+ 194,
+ 174,
+ 218,
+ 147,
+ 177,
+ 209,
+ 198,
+ 90,
+ 97,
+ 167,
+ 154,
+ 158,
+ 41,
+ 142,
+ 228,
+ 185,
+ 25,
+ 148,
+ 160,
+ 188,
+ 70,
+ 93,
+ 107,
+ 235,
+ ]
+
+other_LowAUCColumns = [192,
+ 60,
+ 254,
+ 139,
+ 30,
+ 134,
+ 61,
+ 265,
+ 68,
+ 242,
+ 173,
+ 124,
+ 39,
+ 8,
+ 191,
+ 210,
+ 232,
+ 212,
+ 251,
+ 57,
+ 166,
+ 168,
+ 36,
+ 99,
+ 62,
+ 215,
+ 253,
+ 111,
+ 69,
+ 146,
+ 229,
+ 129,
+ 33,
+ 170,
+ 122,
+ 88,
+ 214,
+ 155,
+ 180,
+ 102,
+ 131,
+ 76,
+ 263,
+ 14,
+ 175,
+ 261,
+ 144,
+ 151,
+ 71,
+ 123,
+ 257,
+ 162,
+ 262,
+ 48,
+ 108,
+ 135,
+ 178,
+ 104,
+ 165,
+ 227,
+ 230,
+ 51,
+ 182,
+ 223,
+ 221,
+ 18,
+ 63,
+ 258,
+ 17,
+ 23,
+ 115,
+ 50,
+ 32,
+ 65,
+ 16,
+ 153,
+ 73,
+ 55,
+ 109,
+ 43,
+ 133,
+ 184,
+ 117,
+ 4,
+ 208,
+ 152,
+ 42,
+ 126,
+ 34,
+ 6,
+ 237,
+ 85,
+ 200,
+ 225,
+ 141,
+ 75,
+ 40,
+ 145,
+ 140,
+ 80,
+ 94,
+ 181,
+ 1,
+ 143,
+ 105,
+ 21,
+ 15,
+ 176,
+ 202,
+ 203,
+ 195,
+ 220,
+ 132,
+ 243,
+ 59,
+ 11,
+ 219,
+ 89,
+ 179,
+ 189,
+ 222,
+ 78,
+ 56,
+ 252,
+ 101,
+ 248,
+ 5,
+ 217,
+ 26,
+ 196,
+ 240,
+ 211,
+ 255,
+ 0,
+ 49,
+ 24,
+ 204,
+ 87,
+ 103,
+ 38,
+ 22,
+ 79,
+ 259,
+ 159,
+ 106,
+ 216,
+ 53,
+ 81,
+ 137,
+ 224,
+ 234,
+ 264,
+ 19,
+ 52,
+ 201]
+
+x_train_NoBadData = delete_cols(x_train_reduced, LowAUCColumns)
+
 #Now perform actual model fit with optimized parameters and dimensions
 model = RandomForestClassifier(criterion = 'gini')
-model.set_params(n_estimators=110, max_features='auto', max_depth=11, min_samples_leaf=25)
+model.set_params(n_estimators=1000, max_features='auto', min_samples_leaf=25)
 model.fit(x_train_reduced, y_train)
-#(cv_accuracy,roc)=cross_validating_randomforest(model, x_train, y_train)
-target_2008 = model.predict_proba(x_test_reduced)[:,1]
-target_2012 = model.predict_proba(x_test_2012_reduced)[:,1]
+#(cv_accuracy,roc)=cross_validating_randomforest(model, x_train_NoBadData, y_train)
+x_test_NoBadData = delete_cols(x_test_reduced, LowAUCColumns)
+x_test_2012_NoBadData = delete_cols(x_test_2012_reduced, LowAUCColumns)
+target_2008 = model.predict_proba(x_test_NoBadData)[:,1]
+target_2012 = model.predict_proba(x_test_2012_NoBadData)[:,1]
 #Write files
 write_file('2008_probabilities.csv',ID_2008,target_2008)
 write_file('2012_probabilities.csv',ID_2008,target_2012)

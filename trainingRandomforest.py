@@ -167,25 +167,6 @@ def perform_randomforest_sensitivity_analysis(x_train_reduced, y_train, paramgri
     
     return classification_error
 
-def write_file(filename, ID, target):
-    '''
-    This function writes a csv file for submission purposes
-    Input: 
-        filename: name of file
-        ID: an array of id numbers
-        target: the predicted probability of the positive class
-    '''
-    new_ID, new_target = zip(*sorted(zip(ID,target))) #sort the id and target according to id numbers
-    new_ID_array = []
-    for value in list(new_ID):
-        new_ID_array.append(int(value)) #transform ID numbers to integers instead of float
-        
-    with open(filename,'w') as f: #write the csv file
-        f.write('id,target\n')
-        writer=csv.writer(f,delimiter=',')
-        writer.writerows(zip(new_ID_array,list((new_target)))) #write id and target in separate columns
-    f.close()
-
 #Load data
 train_data = load_data('train_2008.csv')
 test_data = load_data('test_2008.csv')
