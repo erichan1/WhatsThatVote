@@ -174,16 +174,19 @@ cols_delete = data_reduction(x_train, 0.98) #Columns to be deleted
 x_train_reduced = delete_cols(x_train, cols_delete) #delete columns for training data
 print(x_train.shape)
 print(x_train_reduced.shape)
+#Not going to use normalization for Random Forest, performs worse
 x_train_normalized = normalize_data(x_train_reduced) #normalize training data
 
 x_test_reduced = delete_cols(x_test, cols_delete) #dele columns for 2008 test data
 print(x_test.shape)
 print(x_test_reduced.shape)
+#Not going to use normalization for Random Forest, performs worse
 x_test_normalized = normalize_data(x_test_reduced) #normalize 2008 test data
 
 x_test_2012_reduced = delete_cols(x_test_2012, cols_delete) #dele columns for 2012 test data
 print(x_test_2012.shape)
 print(x_test_2012_reduced.shape)
+#Not going to use normalization for Random Forest, performs worse
 x_test_2012_normalized = normalize_data(x_test_2012_reduced) #normalize 2012 test data
 
 #Potential further reduction using GettingBadData script
@@ -392,14 +395,15 @@ x_train_NoBadData = delete_cols(x_train_reduced, LowAUCColumns)
 
 #Now perform actual model fit with optimized parameters and dimensions
 model = RandomForestClassifier(criterion = 'gini')
-model.set_params(n_estimators=1000, max_features='auto', min_samples_leaf=25)
-model.fit(x_train_reduced, y_train)
-#(cv_accuracy,roc)=cross_validating_randomforest(model, x_train_NoBadData, y_train)
+model.set_params(n_estimators=1000, max_features='auto')
+#model.fit(x_train_NoBadData, y_train)
+(cv_accuracy,roc)=cross_validating_randomforest(model, x_train_NoBadData, y_train)
 x_test_NoBadData = delete_cols(x_test_reduced, LowAUCColumns)
-x_test_2012_NoBadData = delete_cols(x_test_2012_reduced, LowAUCColumns)
-target_2008 = model.predict_proba(x_test_NoBadData)[:,1]
-target_2012 = model.predict_proba(x_test_2012_NoBadData)[:,1]
+#x_test_2012_NoBadData = delete_cols(x_test_2012_reduced, LowAUCColumns)
+#target_2008 = model.predict_proba(x_test_NoBadData)[:,1]
+#target_2012 = model.predict_proba(x_test_2012_NoBadData)[:,1]
 #Write files
-write_file('2008_probabilities.csv',ID_2008,target_2008)
-write_file('2012_probabilities.csv',ID_2008,target_2012)
+#write_file('2008_probabilities_try5.csv',ID_2008,target_2008)
+#write_file('2012_probabilities.csv',ID_2008,target_2012)
+
 
